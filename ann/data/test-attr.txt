@@ -1,0 +1,4 @@
+Outlook Sunny Overcast Rain
+Temperature Hot Mild Cool
+
+PlayTennis Yes No

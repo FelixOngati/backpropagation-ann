@@ -1,0 +1,4 @@
+Sunny Mild No
+Overcast Mild Yes
+Overcast Hot Yes
+Rain Mild Yes
