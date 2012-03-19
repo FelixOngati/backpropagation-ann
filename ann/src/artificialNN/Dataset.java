@@ -15,6 +15,12 @@ class Dataset {
 	boolean PRINT = false;
 	UtilClass util;
 
+	/**
+	 * constructor
+	 * 
+	 * @param dsName
+	 * @param util
+	 */
 	public Dataset(String dsName, UtilClass util) {
 		this.util = util;
 		attrSet = new AttributeSet(dsName);
@@ -22,6 +28,12 @@ class Dataset {
 		loadDataItems(dsName, false);
 	}
 
+	/**
+	 * loads data items from attribute, train and test files
+	 * 
+	 * @param fName
+	 * @param train
+	 */
 	private void loadDataItems(String fName, boolean train) {
 		Scanner sc = null;
 		String trainOrTest = train ? "-train.txt" : "-test.txt";
@@ -43,6 +55,11 @@ class Dataset {
 		}
 	}
 
+	/**
+	 * print all data items in train or test set
+	 * 
+	 * @param train
+	 */
 	void printDataItems(boolean train) {
 		DataItem[] items = train ? allTrainItems : testItems;
 		for (DataItem item : items) {
@@ -51,10 +68,14 @@ class Dataset {
 		System.out.println();
 	}
 
-	public void splitTrainItems() {
+	/**
+	 * splits train data items into train and validation set
+	 * 
+	 * @param validationPercent
+	 */
+	public void splitTrainItems(int validationPercent) {
 		java.util.Random rand = new Random(util.form.getParams().randomSeed);
-		int numOfValidationItems = (allTrainItems.length * util.form
-				.getParams().validationPercent) / 100;
+		int numOfValidationItems = (allTrainItems.length * validationPercent) / 100;
 		trainItems = new DataItem[allTrainItems.length - numOfValidationItems];
 		validItems = new DataItem[numOfValidationItems];
 		boolean[] selected = new boolean[allTrainItems.length];
@@ -72,12 +93,20 @@ class Dataset {
 				trainItems[j++] = allTrainItems[i];
 			}
 		}
+		System.out
+				.println(validationPercent + "% of data (" + validItems.length
+						+ " items) is getting used for validation.");
 	}
 
-	public void corruptData() {
+	/**
+	 * corrupts some of the records in dataset
+	 * 
+	 * @param corruptionPercent
+	 */
+	public void corruptData(int corruptionPercent) {
 		String[] vals = attrSet.outputs[0].vals;
 		java.util.Random rand = new Random(util.form.getParams().randomSeed * 2);
-		int num2Corrupt = (allTrainItems.length * util.form.getParams().corruptionPercent) / 100;
+		int num2Corrupt = (allTrainItems.length * corruptionPercent) / 100;
 		int i = 0;
 		boolean[] selected = new boolean[allTrainItems.length];
 		while (i < num2Corrupt) {
@@ -88,6 +117,7 @@ class Dataset {
 					int r2 = rand.nextInt(vals.length);
 					if (!allTrainItems[r].outputs[0].equals(vals[r2])) {
 						allTrainItems[r].outputs[0] = vals[r2];
+						allTrainItems[r].calcVectors(attrSet);
 						i++;
 						break;
 					}

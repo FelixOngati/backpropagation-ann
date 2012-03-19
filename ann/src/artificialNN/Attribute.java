@@ -11,6 +11,13 @@ class Attribute {
 	int index;
 	boolean input;
 
+	/**
+	 * constructor (receives a file line and creates an attribute)
+	 * 
+	 * @param line
+	 * @param index
+	 * @param input
+	 */
 	public Attribute(String line, int index, boolean input) {
 		Scanner sc = new Scanner(line);
 		name = sc.next();
@@ -29,6 +36,9 @@ class Attribute {
 		this.input = input;
 	}
 
+	/**
+	 * prints an attribute
+	 */
 	public void print() {
 		System.out.print(name + " values:" + Arrays.toString(vals));
 		System.out.print(" cont:" + cont + " input:" + input);

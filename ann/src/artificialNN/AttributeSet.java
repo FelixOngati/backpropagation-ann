@@ -11,6 +11,11 @@ class AttributeSet {
 	int inputVecSize;
 	int outputVecSize;
 
+	/**
+	 * constructor
+	 * 
+	 * @param dsName
+	 */
 	public AttributeSet(String dsName) {
 		ArrayList<Attribute> tempAL = new ArrayList<Attribute>();
 		String fName = "data/" + dsName + "-attr.txt";
@@ -37,24 +42,39 @@ class AttributeSet {
 		calcInOutSize();
 	}
 
+	/**
+	 * calculates length of vectors which will contain the coded version of the
+	 * input and output vectors
+	 */
 	private void calcInOutSize() {
 		int i = 0;
 		if (inputs[0].cont == true) {
 			i = inputs.length;
 		} else {
 			for (Attribute attr : inputs) {
-				i += attr.vals.length;
+				if (attr.vals.length > 2) {
+					i += attr.vals.length;
+				} else {
+					i += 1;
+				}
 			}
 		}
 		inputVecSize = i;
 
 		i = 0;
 		for (Attribute attr : outputs) {
-			i += attr.vals.length;
+			if (attr.vals.length > 2) {
+				i += attr.vals.length;
+			} else {
+				i += 1;
+			}
 		}
 		outputVecSize = i;
 	}
 
+	/**
+	 * prints the attribute set
+	 */
 	public void print() {
 		for (Attribute attr : inputs) {
 			attr.print();

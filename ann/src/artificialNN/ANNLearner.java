@@ -15,7 +15,9 @@ public class ANNLearner {
 	double[][] hid2outMat;
 	int seed;
 	Random rand;
-	boolean PRINT_PROCESS = false;
+	boolean printLearningProcess;
+	double[] prevDeltaO;
+	double[] prevDeltaH;
 
 	/**
 	 * constructor of the artificial neural network
@@ -33,6 +35,10 @@ public class ANNLearner {
 		this.iter = p.iter;
 		as = util.dataset.attrSet;
 		this.rand = new Random(p.randomSeed);
+		this.printLearningProcess = p.printLearnProcess;
+
+		prevDeltaO = new double[trainItems[0].outputVec.length];
+		prevDeltaH = new double[numofHid + 1];
 	}
 
 	/**
@@ -58,7 +64,7 @@ public class ANNLearner {
 	 * prints the weight matrices
 	 */
 	private void printWeights(double[] hidOut, double[] curOut, DataItem item) {
-		if (!PRINT_PROCESS)
+		if (!printLearningProcess)
 			return;
 		System.out.println("\ninVec:\n" + Arrays.toString(item.inputVec)
 				+ Arrays.toString(item.inputs));
@@ -99,7 +105,7 @@ public class ANNLearner {
 	 * @return the output vector of the network
 	 */
 	double[][] propagateInput(DataItem item) {
-		int[] inVec = item.inputVec;
+		double[] inVec = item.inputVec;
 		double[] hidOut = new double[numofHid + 1];
 		for (int i = 0; i < numofHid; i++) {
 			for (int j = 0; j <= as.inputVecSize; j++) {
@@ -133,13 +139,13 @@ public class ANNLearner {
 	 *            real output we have from trainset
 	 */
 	private void propagateError(double[] curHidOut, double[] curOut,
-			int[] outVec, int[] inVec) {
+			int[] outVec, double[] inVec) {
 		// calculating delta
 		double[] deltaO = new double[outVec.length];
 		for (int i = 0; i < deltaO.length; i++) {
 			deltaO[i] = curOut[i] * (1 - curOut[i]) * (outVec[i] - curOut[i]);
 		}
-		double[] deltaH = new double[numofHid];
+		double[] deltaH = new double[numofHid + 1];
 		for (int i = 0; i < deltaH.length; i++) {
 			double sigmaError = 0;
 			for (int j = 0; j < outVec.length; j++) {
@@ -152,18 +158,22 @@ public class ANNLearner {
 
 		// updating weights (in2hid)
 		for (int i = 0; i <= as.inputVecSize; i++) {
-			for (int j = 0; j < numofHid; j++) {
+			for (int j = 1; j <= numofHid; j++) {
 				double delta = eta * deltaH[j] * inVec[i];
-				in2hidMat[i][j] += delta;
+				delta += momentum * prevDeltaH[j];
+				in2hidMat[i][j - 1] += delta;
 			}
 		}
 		// hid2out
 		for (int i = 0; i <= numofHid; i++) {
 			for (int j = 0; j < as.outputVecSize; j++) {
 				double delta = eta * deltaO[j] * curHidOut[i];
+				delta += momentum * prevDeltaO[j];
 				hid2outMat[i][j] += delta;
 			}
 		}
+		prevDeltaO = deltaO;
+		prevDeltaH = deltaH;
 	}
 
 	/**
@@ -177,7 +187,7 @@ public class ANNLearner {
 	 */
 	private void printOutputs(double[] curOut, int[] outVec, double[] deltaO,
 			double[] deltaH) {
-		if (!PRINT_PROCESS)
+		if (!printLearningProcess)
 			return;
 
 		System.out.println("\noutVec:");// + Arrays.toString(outVec));
@@ -208,11 +218,60 @@ public class ANNLearner {
 		int i = 0;
 		while (i++ < iter) {
 			for (DataItem item : trainItems) {
-				int[] inVec = item.inputVec;
+				double[] inVec = item.inputVec;
 				int[] outVec = item.outputVec;
 				double[][] curOutandHidOut = propagateInput(item);
 				propagateError(curOutandHidOut[0], curOutandHidOut[1], outVec,
 						inVec);
+			}
+		}
+	}
+
+	/**
+	 * method of the ANN to learn and setting the best weights based on
+	 * validation set.
+	 */
+	public void learnAndValidate() {
+		initMatrices();
+		int i = 0;
+		float accuracy = -1;
+		double[][] tempIn2hidMat = new double[as.inputVecSize + 1][numofHid];
+		double[][] tempHid2outMat = new double[numofHid + 1][as.outputVecSize];
+
+		while (i++ < iter) {
+			for (DataItem item : trainItems) {
+				double[] inVec = item.inputVec;
+				int[] outVec = item.outputVec;
+				double[][] curOutandHidOut = propagateInput(item);
+				propagateError(curOutandHidOut[0], curOutandHidOut[1], outVec,
+						inVec);
+			}
+			checkAccuracy(accuracy, tempIn2hidMat, tempHid2outMat);
+		}
+		in2hidMat = tempIn2hidMat;
+		hid2outMat = tempHid2outMat;
+	}
+
+	/**
+	 * if the current accuracy is better than the max, save the weights
+	 * 
+	 * @param accuracy
+	 * @param tempIn2hidMat
+	 * @param tempHid2outMat
+	 */
+	private void checkAccuracy(float accuracy, double[][] tempIn2hidMat,
+			double[][] tempHid2outMat) {
+		Tester tester = new Tester(util);
+		if (tester.testNoisy(util.dataset.validItems, false, false) >= accuracy) {
+			for (int k = 0; k <= as.inputVecSize; k++) {
+				for (int j = 0; j < numofHid; j++) {
+					tempIn2hidMat[k][j] = in2hidMat[k][j];
+				}
+			}
+			for (int k = 0; k <= numofHid; k++) {
+				for (int j = 0; j < as.outputVecSize; j++) {
+					tempHid2outMat[k][j] = hid2outMat[k][j];
+				}
 			}
 		}
 	}

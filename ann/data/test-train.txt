@@ -1,7 +1,0 @@
-Sunny Hot No
-Sunny Mild No
-Sunny Cool Yes
-Overcast Hot Yes
-Overcast Cool Yes
-Rain Mild Yes
-Rain Cool Yes
