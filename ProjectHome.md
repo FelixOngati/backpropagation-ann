@@ -1,0 +1,1 @@
+A java implementation of an artificial neural network containing two layers of sigmoid units.
